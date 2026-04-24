@@ -20,9 +20,10 @@ function App() {
     setResult(null)
 
     try {
-      // Simulate processing latency to reflect an audit pipeline.
+      // Simulate audit processing time for a realistic UI flow.
       await new Promise((resolve) => setTimeout(resolve, 1400))
 
+      // Call backend endpoint that returns score, issues, and breakdown.
       const response = await fetch('/analyze', {
         method: 'POST',
         headers: {
@@ -137,6 +138,7 @@ function App() {
                   Score Breakdown
                 </h3>
                 <div className="mt-4 space-y-3 text-sm text-slate-700">
+                  {/* Score starts from 100 before penalties are applied. */}
                   <div className="flex items-start justify-between gap-4 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
                     <span>Base score</span>
                     <span className="font-semibold text-slate-900">100</span>

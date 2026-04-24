@@ -74,8 +74,10 @@ function normalizeUrl(rawUrl) {
   let parsed
 
   try {
+    // Accept fully-qualified URLs first.
     parsed = new URL(rawUrl)
   } catch {
+    // Fallback so users can submit values like "example.com".
     parsed = new URL(`https://${rawUrl}`)
   }
 
@@ -122,13 +124,17 @@ function scoreUrl(urlInput) {
   const normalizedUrl = normalizeUrl(urlInput)
   const searchableText = `${normalizedUrl.hostname}${normalizedUrl.pathname}`.toLowerCase()
 
+  // A rule fails when its keyword/check signal is missing.
   const failedRules = PENALTY_RULES.filter(
     (rule) => !evaluateRule(normalizedUrl, searchableText, rule),
   )
 
+  // Start at 100 and subtract deterministic penalties.
   const penalty = failedRules.reduce((sum, rule) => sum + rule.penalty, 0)
   const rawScore = 100 - penalty
   const score = Math.max(0, Math.min(100, rawScore))
+
+  // Always return actionable issues and a transparent breakdown.
   const issues = buildIssues(normalizedUrl, searchableText, failedRules)
   const breakdown = buildBreakdown(failedRules)
 
