@@ -6,6 +6,7 @@ function App() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
+  const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '')
 
   async function handleAnalyze(event) {
     event.preventDefault()
@@ -25,7 +26,7 @@ function App() {
       await new Promise((resolve) => setTimeout(resolve, 1400))
 
       // Call backend endpoint that returns score, issues, and breakdown.
-      const response = await fetch(`${apiBaseUrl}/analyze`, {
+      const response = await fetch(`${normalizedApiBaseUrl}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,10 +34,24 @@ function App() {
         body: JSON.stringify({ url: url.trim() }),
       })
 
-      const data = await response.json()
+      const rawBody = await response.text()
+      let data = null
+
+      try {
+        data = rawBody ? JSON.parse(rawBody) : null
+      } catch {
+        data = null
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || 'Audit failed. Please try another URL.')
+        throw new Error(
+          data?.error ||
+            `Backend request failed (${response.status}). Check VITE_API_BASE_URL and confirm backend has POST /analyze.`,
+        )
+      }
+
+      if (!data) {
+        throw new Error('Backend returned an invalid response. Please try again.')
       }
 
       setResult(data)
