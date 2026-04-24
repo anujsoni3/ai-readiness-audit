@@ -8,11 +8,27 @@ function App() {
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
   const normalizedApiBaseUrl = apiBaseUrl.replace(/\/$/, '')
 
+  function isValidUrl(input) {
+    try {
+      const parsed = new URL(input)
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+
   async function handleAnalyze(event) {
     event.preventDefault()
+    const trimmedUrl = url.trim()
 
-    if (!url.trim()) {
+    if (!trimmedUrl) {
       setError('Please enter a website URL to analyze.')
+      setResult(null)
+      return
+    }
+
+    if (!isValidUrl(trimmedUrl)) {
+      setError('Please enter a valid URL (e.g., https://example.com).')
       setResult(null)
       return
     }
@@ -31,7 +47,7 @@ function App() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url: trimmedUrl }),
       })
 
       const rawBody = await response.text()
@@ -71,6 +87,7 @@ function App() {
         : 'bg-emerald-600'
 
   const breakdown = result?.breakdown ?? []
+  const detectedSignals = result?.detectedSignals ?? []
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
@@ -154,18 +171,22 @@ function App() {
                   Score Breakdown
                 </h3>
                 <div className="mt-4 space-y-3 text-sm text-slate-700">
-                  {/* Score starts from 100 before penalties are applied. */}
+                  {/* Scoring now starts from a neutral baseline. */}
                   <div className="flex items-start justify-between gap-4 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
                     <span>Base score</span>
-                    <span className="font-semibold text-slate-900">100</span>
+                    <span className="font-semibold text-slate-900">50</span>
                   </div>
                   {breakdown.map((item) => (
                     <div
-                      key={`${item.label}-${item.penalty}`}
+                      key={`${item.label}-${item.impact}`}
                       className="flex items-start justify-between gap-4 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200"
                     >
                       <span>{item.label}</span>
-                      <span className="font-semibold text-rose-700">-{item.penalty}</span>
+                      <span
+                        className={`font-semibold ${item.impact >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}
+                      >
+                        {item.impact >= 0 ? `+${item.impact}` : item.impact}
+                      </span>
                     </div>
                   ))}
                   <div className="flex items-start justify-between gap-4 rounded-lg bg-slate-900 px-3 py-2 text-white">
@@ -180,7 +201,19 @@ function App() {
             </article>
 
             <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
-              <h2 className="text-xl font-bold">Actionable Issues</h2>
+              <h2 className="text-xl font-bold">Detected Signals</h2>
+              <ul className="mt-4 space-y-3">
+                {detectedSignals.map((signal, index) => (
+                  <li
+                    key={`${signal.label}-${index}`}
+                    className={`rounded-lg px-4 py-3 text-sm leading-relaxed ${signal.found ? 'border border-emerald-200 bg-emerald-50 text-emerald-900' : 'border border-rose-200 bg-rose-50 text-rose-900'}`}
+                  >
+                    {signal.found ? 'Found:' : 'Not found:'} {signal.label}
+                  </li>
+                ))}
+              </ul>
+
+              <h2 className="mt-8 text-xl font-bold">Actionable Issues</h2>
               <ul className="mt-4 space-y-3">
                 {result.issues.map((issue, index) => (
                   <li

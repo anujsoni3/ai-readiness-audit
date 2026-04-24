@@ -1,39 +1,56 @@
-const PENALTY_RULES = [
+const BASE_SCORE = 50
+
+const SCORING_RULES = [
   {
     id: 'long-form-content',
-    penalty: 15,
+    title: 'Blog/docs/learn content signal',
     keywords: ['blog', 'docs', 'learn', 'guides', 'resources', 'academy'],
+    positive: 15,
+    negative: 5,
+    signalLabel: 'Blog or documentation content',
     issue:
       'No long-form content signal detected in the URL (blog/docs/learn). Add a docs or insights section to improve semantic depth for LLM retrieval.',
   },
   {
     id: 'qna-support-content',
-    penalty: 20,
+    title: 'FAQ/help/support signal',
     keywords: ['faq', 'help', 'support', 'knowledge-base', 'kb'],
+    positive: 10,
+    negative: 20,
+    signalLabel: 'FAQ/help/support section',
     issue:
       'No FAQ/help/support signal detected. Publish structured Q&A pages so AI systems can map common user intents and direct answers.',
   },
   {
     id: 'url-depth',
-    penalty: 10,
+    title: 'URL depth signal',
     check: (url) => {
       const pathSegments = url.pathname.split('/').filter(Boolean)
       return !(pathSegments.length < 2 && url.pathname.length <= 1)
     },
+    positive: 5,
+    negative: 5,
+    signalLabel: 'Deeper URL structure',
     issue:
       'URL structure appears too shallow. Introduce clear content paths (for example /learn/, /docs/, /use-cases/) so knowledge can be segmented and retrieved reliably.',
   },
   {
     id: 'information-architecture',
-    penalty: 15,
+    title: 'Structured sections signal',
     keywords: ['products', 'solutions', 'features', 'pricing', 'platform', 'use-cases'],
+    positive: 10,
+    negative: 5,
+    signalLabel: 'Clearly defined product/solution sections',
     issue:
-      'No clearly defined content sections (e.g., product pages, solution pages). This makes it harder for AI systems to segment and route information.',
+      'No clearly defined content sections (e.g., product or solution pages), making it harder for AI to segment information.',
   },
   {
     id: 'developer-readiness',
-    penalty: 10,
+    title: 'Developer docs signal',
     keywords: ['api', 'developer', 'developers', 'sdk', 'reference', 'changelog'],
+    positive: 10,
+    negative: 10,
+    signalLabel: 'Developer docs/API references',
     issue:
       'No developer-focused content signal detected. Add API/reference/changelog pages to improve machine-usable context and technical grounding.',
   },
@@ -92,8 +109,8 @@ function evaluateRule(url, searchableText, rule) {
   return containsAny(searchableText, rule.keywords)
 }
 
-function buildIssues(url, searchableText, failedRules) {
-  const issues = failedRules.map((rule) => rule.issue)
+function buildIssues(searchableText, failedEvaluations) {
+  const issues = failedEvaluations.map(({ rule }) => rule.issue)
 
   if (issues.length >= 4) {
     return issues.slice(0, 5)
@@ -113,10 +130,17 @@ function buildIssues(url, searchableText, failedRules) {
   return issues.slice(0, 5)
 }
 
-function buildBreakdown(failedRules) {
-  return failedRules.map((rule) => ({
-    label: rule.issue,
-    penalty: rule.penalty,
+function buildBreakdown(evaluations) {
+  return evaluations.map(({ rule, matched }) => ({
+    label: rule.title,
+    impact: matched ? rule.positive : -rule.negative,
+  }))
+}
+
+function buildDetectedSignals(evaluations) {
+  return evaluations.map(({ rule, matched }) => ({
+    label: rule.signalLabel,
+    found: matched,
   }))
 }
 
@@ -124,24 +148,28 @@ function scoreUrl(urlInput) {
   const normalizedUrl = normalizeUrl(urlInput)
   const searchableText = `${normalizedUrl.hostname}${normalizedUrl.pathname}`.toLowerCase()
 
-  // A rule fails when its keyword/check signal is missing.
-  const failedRules = PENALTY_RULES.filter(
-    (rule) => !evaluateRule(normalizedUrl, searchableText, rule),
-  )
+  const evaluations = SCORING_RULES.map((rule) => ({
+    rule,
+    matched: evaluateRule(normalizedUrl, searchableText, rule),
+  }))
+  const failedEvaluations = evaluations.filter(({ matched }) => !matched)
 
-  // Start at 100 and subtract deterministic penalties.
-  const penalty = failedRules.reduce((sum, rule) => sum + rule.penalty, 0)
-  const rawScore = 100 - penalty
+  // Start from a neutral baseline, then add or subtract deterministic impacts.
+  const rawScore = evaluations.reduce((total, { rule, matched }) => {
+    return total + (matched ? rule.positive : -rule.negative)
+  }, BASE_SCORE)
   const score = Math.max(0, Math.min(100, rawScore))
 
   // Always return actionable issues and a transparent breakdown.
-  const issues = buildIssues(normalizedUrl, searchableText, failedRules)
-  const breakdown = buildBreakdown(failedRules)
+  const issues = buildIssues(searchableText, failedEvaluations)
+  const breakdown = buildBreakdown(evaluations)
+  const detectedSignals = buildDetectedSignals(evaluations)
 
   return {
     score,
     issues,
     breakdown,
+    detectedSignals,
   }
 }
 
