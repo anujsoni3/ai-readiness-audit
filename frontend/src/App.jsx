@@ -5,6 +5,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false)
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
+  const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || ''
 
   async function handleAnalyze(event) {
     event.preventDefault()
@@ -24,7 +25,7 @@ function App() {
       await new Promise((resolve) => setTimeout(resolve, 1400))
 
       // Call backend endpoint that returns score, issues, and breakdown.
-      const response = await fetch('/analyze', {
+      const response = await fetch(`${apiBaseUrl}/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
