@@ -1,0 +1,17 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Express API for deterministic AI readiness audit simulation",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "express": "^5.2.1"
+  }
+}
