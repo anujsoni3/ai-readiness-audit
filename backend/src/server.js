@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
+app.get('/', (_req, res) => {
+  // Keep root path healthy for uptime tools that check '/'.
+  res.json({ status: 'ok', service: 'ai-readiness-audit-api' })
+})
+
 app.post('/analyze', (req, res) => {
   const { url } = req.body || {}
 
