@@ -16,6 +16,7 @@ A simple full-stack web app that simulates how "AI-ready" a website is for LLM r
 - Returns:
   - `score` out of 100
   - `issues` array (always 4-5 specific, actionable findings)
+  - `breakdown` array showing the exact penalties applied
 
 ## Deterministic Scoring Rules
 
@@ -75,6 +76,12 @@ Response:
 ```json
 {
   "score": 30,
+  "breakdown": [
+    {
+      "label": "No long-form content signal detected in the URL (blog/docs/learn). Add a docs or insights section to improve semantic depth for LLM retrieval.",
+      "penalty": 15
+    }
+  ],
   "issues": [
     "No long-form content signal detected in the URL (blog/docs/learn). Add a docs or insights section to improve semantic depth for LLM retrieval.",
     "No FAQ/help/support signal detected. Publish structured Q&A pages so AI systems can map common user intents and direct answers.",

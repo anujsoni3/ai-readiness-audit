@@ -28,7 +28,7 @@ const PENALTY_RULES = [
     penalty: 15,
     keywords: ['products', 'solutions', 'features', 'pricing', 'platform', 'use-cases'],
     issue:
-      'No structured section signal detected (products/solutions/features). Add explicit content hubs to improve chunking and topic routing for AI systems.',
+      'No clearly defined content sections (e.g., product pages, solution pages). This makes it harder for AI systems to segment and route information.',
   },
   {
     id: 'developer-readiness',
@@ -111,6 +111,13 @@ function buildIssues(url, searchableText, failedRules) {
   return issues.slice(0, 5)
 }
 
+function buildBreakdown(failedRules) {
+  return failedRules.map((rule) => ({
+    label: rule.issue,
+    penalty: rule.penalty,
+  }))
+}
+
 function scoreUrl(urlInput) {
   const normalizedUrl = normalizeUrl(urlInput)
   const searchableText = `${normalizedUrl.hostname}${normalizedUrl.pathname}`.toLowerCase()
@@ -123,10 +130,12 @@ function scoreUrl(urlInput) {
   const rawScore = 100 - penalty
   const score = Math.max(0, Math.min(100, rawScore))
   const issues = buildIssues(normalizedUrl, searchableText, failedRules)
+  const breakdown = buildBreakdown(failedRules)
 
   return {
     score,
     issues,
+    breakdown,
   }
 }
 

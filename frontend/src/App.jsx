@@ -46,6 +46,14 @@ function App() {
   }
 
   const scoreValue = result?.score ?? 0
+  const scoreBandClasses =
+    scoreValue < 40
+      ? 'bg-rose-600'
+      : scoreValue < 70
+        ? 'bg-amber-500'
+        : 'bg-emerald-600'
+
+  const breakdown = result?.breakdown ?? []
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900 sm:px-6 lg:px-8">
@@ -110,7 +118,7 @@ function App() {
 
               <div className="mt-6 h-3 w-full rounded-full bg-slate-200">
                 <div
-                  className="h-3 rounded-full bg-cyan-700 transition-all duration-500"
+                  className={`h-3 rounded-full transition-all duration-500 ${scoreBandClasses}`}
                   style={{ width: `${scoreValue}%` }}
                 />
               </div>
@@ -119,6 +127,38 @@ function App() {
                 This score reflects how easily AI systems (like LLMs) can
                 understand, retrieve, and reuse your content.
               </p>
+              <p className="mt-3 text-sm leading-relaxed text-slate-600">
+                This audit uses heuristic signals like URL patterns, content depth
+                indicators, and structured sections to estimate AI readability.
+              </p>
+
+              <div className="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+                <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-slate-600">
+                  Score Breakdown
+                </h3>
+                <div className="mt-4 space-y-3 text-sm text-slate-700">
+                  <div className="flex items-start justify-between gap-4 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200">
+                    <span>Base score</span>
+                    <span className="font-semibold text-slate-900">100</span>
+                  </div>
+                  {breakdown.map((item) => (
+                    <div
+                      key={`${item.label}-${item.penalty}`}
+                      className="flex items-start justify-between gap-4 rounded-lg bg-white px-3 py-2 ring-1 ring-slate-200"
+                    >
+                      <span>{item.label}</span>
+                      <span className="font-semibold text-rose-700">-{item.penalty}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-start justify-between gap-4 rounded-lg bg-slate-900 px-3 py-2 text-white">
+                    <span>Final score</span>
+                    <span className="font-semibold">{scoreValue}</span>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                  Red: 0-40  |  Yellow: 40-70  |  Green: 70+
+                </p>
+              </div>
             </article>
 
             <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200 sm:p-8">
